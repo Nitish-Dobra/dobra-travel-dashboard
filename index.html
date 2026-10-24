@@ -1,0 +1,468 @@
+<title>Team Travel Spend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page:#f4f6f9; --surface:#ffffff; --sunk:#eef1f5;
+  --ink:#10151c; --ink-2:#4a5361; --muted:#7c8594;
+  --grid:#e3e7ed; --axis:#c4cad3; --line:rgba(16,21,28,.10);
+  --accent:#1f5fae; --accent-soft:#e3edf9;
+  --air:#2a78d6; --hotel:#eb6834; --rail:#1baf7a; --bus:#eda100;
+  --neg:#b8403f; --heat:42,120,214;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --page:#0e1116; --surface:#161b22; --sunk:#1d232c;
+    --ink:#f2f4f7; --ink-2:#b9c0cb; --muted:#8a93a0;
+    --grid:#262d37; --axis:#39424f; --line:rgba(255,255,255,.10);
+    --accent:#6ea6ec; --accent-soft:#1d2b3e;
+    --air:#3987e5; --hotel:#d95926; --rail:#199e70; --bus:#c98500;
+    --neg:#e66767; --heat:57,135,229;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --page:#0e1116; --surface:#161b22; --sunk:#1d232c;
+  --ink:#f2f4f7; --ink-2:#b9c0cb; --muted:#8a93a0;
+  --grid:#262d37; --axis:#39424f; --line:rgba(255,255,255,.10);
+  --accent:#6ea6ec; --accent-soft:#1d2b3e;
+  --air:#3987e5; --hotel:#d95926; --rail:#199e70; --bus:#c98500;
+  --neg:#e66767; --heat:57,135,229;
+}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-size:26px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:15px;font-weight:600}
+.sub{color:var(--ink-2);margin-top:4px}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono);font-size:12px}
+
+header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.seg{display:inline-flex;background:var(--sunk);border-radius:8px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--ink-2);font:500 13px var(--sans);padding:6px 12px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+select,input[type=search]{font:13px var(--sans);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0}
+select{min-width:210px}
+button:focus-visible,select:focus-visible,input:focus-visible,.clickable:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.reset{border:0;background:none;color:var(--accent);font:500 13px var(--sans);cursor:pointer;padding:7px 4px}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.kpi .v{font-size:24px;font-weight:600;letter-spacing:-.01em}
+.kpi .d{color:var(--ink-2);font-size:12.5px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel-head{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:baseline}
+.panel-head p{margin:2px 0 0;color:var(--ink-2);font-size:12.5px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+svg text{font-family:var(--sans)}
+.chart{width:100%;position:relative}
+
+.people{display:flex;flex-direction:column;gap:2px}
+.prow{display:grid;grid-template-columns:minmax(120px,190px) 1fr 92px;gap:10px;align-items:center;padding:5px 6px;border-radius:6px;cursor:pointer;border:0;background:none;color:inherit;font:inherit;text-align:left;width:100%}
+.prow:hover,.prow.sel{background:var(--sunk)}
+.prow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .amt{text-align:right}
+.prow .amt small{display:block;color:var(--muted);font-size:11px}
+.bar{display:flex;height:14px;gap:2px;min-width:0}
+.bar i{display:block;height:100%}
+.bar i:first-child{border-radius:3px 0 0 3px}
+.bar i:last-child{border-radius:0 3px 3px 0}
+.bar i:only-child{border-radius:3px}
+
+.split{display:flex;flex-direction:column;gap:14px}
+.srow{display:grid;grid-template-columns:70px 1fr 120px;gap:10px;align-items:center}
+.track{height:10px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:3px}
+.srow .amt{text-align:right}
+.srow .amt small{color:var(--muted)}
+.build{display:flex;height:22px;gap:2px;border-radius:4px;overflow:hidden}
+.build i{display:block;height:100%}
+.divider{border-top:1px solid var(--line)}
+
+.tscroll{overflow-x:auto;border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid)}
+th{font-weight:600;color:var(--ink-2);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;background:var(--surface)}
+th:first-child,td:first-child{text-align:left}
+tfoot td{font-weight:600;border-top:1px solid var(--axis);border-bottom:0}
+td.tot,th.tot{font-weight:600;background:var(--sunk)}
+.matrix td.cell{min-width:74px}
+.matrix td.zero{color:var(--muted)}
+.matrix tbody tr{cursor:pointer}
+.matrix tbody tr:hover td:first-child{color:var(--accent)}
+.left{text-align:left!important}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--sunk);color:var(--ink-2)}
+.pill.ref{background:transparent;color:var(--neg);border:1px solid currentColor}
+.neg{color:var(--neg)}
+.detail-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.detail-tools input{flex:1 1 220px;max-width:340px}
+.count{color:var(--muted);font-size:12.5px}
+.routes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.route{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;background:var(--sunk);border-radius:8px}
+.route b{font-family:var(--mono);font-weight:500;font-size:12.5px}
+.notes{color:var(--ink-2);font-size:12.5px;max-width:78ch}
+.notes ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+
+#tip{position:fixed;pointer-events:none;z-index:10;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,.18);border-radius:8px;padding:9px 11px;font-size:12.5px;min-width:170px}
+#tip .t{font-weight:600;margin-bottom:5px}
+#tip .r{display:flex;justify-content:space-between;gap:14px;align-items:center}
+#tip .r span:first-child{display:inline-flex;gap:6px;align-items:center;color:var(--ink-2)}
+#tip .r.total{border-top:1px solid var(--grid);margin-top:5px;padding-top:5px;font-weight:600}
+@media (max-width:520px){ .prow{grid-template-columns:110px 1fr 78px} .srow{grid-template-columns:56px 1fr 104px} h1{font-size:22px} }
+@media (prefers-reduced-motion:no-preference){ .bar i,.track i{transition:width .25s ease} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Oxbow Brands · Travel agent bills</div>
+      <h1>Team Travel Spend</h1>
+      <div class="sub" id="period"></div>
+    </div>
+    <div class="filters">
+      <div class="field"><span class="eyebrow">Billed under</span>
+        <div class="seg" id="acct" role="group" aria-label="Billed under">
+          <button id="acct-all" aria-pressed="true" data-v="All">All</button>
+          <button id="acct-oxbow" aria-pressed="false" data-v="Oxbow">Oxbow</button>
+          <button id="acct-johars" aria-pressed="false" data-v="Johars">Johars</button>
+        </div>
+      </div>
+      <div class="field"><label class="eyebrow" for="person">Team member</label>
+        <select id="person"></select>
+      </div>
+      <button class="reset" id="reset" hidden>Clear filters</button>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Summary"></section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2>Monthly travel cost</h2><p>Net of refunds and cancellations, by billing month. Hover a month for the split.</p></div>
+      <div class="legend" id="legend-month"></div>
+    </div>
+    <div class="chart" id="monthChart"></div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>Team member wise</h2><p>Net spend and share of total. Click a name to filter the whole page.</p></div>
+      </div>
+      <div class="people" id="people"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><h2>Where the money goes</h2><p>By travel mode, billing account and cost component.</p></div></div>
+      <div class="split" id="modes"></div>
+      <div class="divider"></div>
+      <div class="split" id="accts"></div>
+      <div class="divider"></div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:8px">Cost build-up (gross bookings)</div>
+        <div class="build" id="build"></div>
+        <div class="legend" id="buildLegend" style="margin-top:8px"></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2>Team member × month</h2><p>Net spend per person per billing month. Darker cells cost more. Click a row to filter.</p></div>
+    </div>
+    <div class="tscroll"><table class="matrix num" id="matrix"></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><h2>Most-travelled routes</h2><p>Air, rail and bus tickets by station pair, both directions combined, net spend.</p></div></div>
+    <div class="routes" id="routes"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2>All bookings</h2><p>Every line from the agent bills. Refunds and reversals are marked.</p></div>
+      <div class="detail-tools">
+        <label for="q" class="eyebrow">Search</label>
+        <input type="search" id="q" placeholder="Name, city, hotel, PNR…">
+        <span class="count" id="count"></span>
+      </div>
+    </div>
+    <div class="tscroll" style="max-height:560px;overflow-y:auto"><table class="num" id="detail"></table></div>
+  </section>
+
+  <section class="notes">
+    <div class="eyebrow">How this was built</div>
+    <ul id="notes"></ul>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const DATA = [{"month":"Nov'25","acct":"Johars","mode":"Rail","refund":false,"booked":"2025-11-05","travel":"2025-11-11","frm":"MYA","to":"MAS","ref":"4427983282","base":1145.0,"sc":44.25,"fee":100.0,"gst":18.0,"total":1307.25,"name":"Mallesh L","pax":1,"raw":"Mallesh L"},{"month":"Nov'25","acct":"Johars","mode":"Rail","refund":false,"booked":"2025-11-05","travel":"2025-11-13","frm":"MAS","to":"SBC","ref":"4640715671","base":1140.0,"sc":44.22,"fee":100.0,"gst":18.0,"total":1302.22,"name":"Mallesh L","pax":1,"raw":"Mallesh L"},{"month":"Nov'25","acct":"Johars","mode":"Hotel","refund":false,"booked":"2025-11-07","travel":"2025-11-11","frm":"MAS","to":"MAS","ref":"Hotel Grand Cascade","base":5200.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":6026.0,"name":"Mallesh L","pax":1,"raw":"Mallesh L"},{"month":"Nov'25","acct":"Johars","mode":"Bus","refund":false,"booked":"2025-11-24","travel":"2025-11-25","frm":"BLR","to":"MAQ","ref":"2212BNGCDP","base":2780.0,"sc":0.0,"fee":150.0,"gst":27.0,"total":2957.0,"name":"Mallesh L","pax":2,"raw":"Mallesh L +1"},{"month":"Nov'25","acct":"Johars","mode":"Bus","refund":false,"booked":"2025-11-24","travel":"2025-11-26","frm":"MAQ","to":"BLR","ref":"2041CDPBNG","base":1390.0,"sc":0.0,"fee":75.0,"gst":13.5,"total":1478.5,"name":"Mallesh L","pax":1,"raw":"Mallesh L"},{"month":"Nov'25","acct":"Johars","mode":"Bus","refund":true,"booked":"2025-11-24","travel":"2025-11-25","frm":"BLR","to":"MAQ","ref":"2212BNGCDP","base":-2088.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-2088.0,"name":"Mallesh L","pax":2,"raw":"Mallesh L +1"},{"month":"Nov'25","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2025-11-18","travel":"2025-11-29","frm":"CAN","to":"YPR","ref":"4935870822","base":1440.0,"sc":46.47,"fee":100.0,"gst":18.0,"total":1604.47,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgun"},{"month":"Nov'25","acct":"Oxbow","mode":"Bus","refund":false,"booked":"2025-11-18","travel":"2025-11-26","frm":"SBC","to":"CAN","ref":"CAT39UP9","base":1509.0,"sc":0.0,"fee":75.0,"gst":13.5,"total":1597.5,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgun"},{"month":"Nov'25","acct":"Oxbow","mode":"Rail","refund":true,"booked":"2025-11-25","travel":"2025-11-29","frm":"CAN","to":"YPR","ref":"4935870822","base":-1230.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-1230.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgun"},{"month":"Nov'25","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2025-11-25","travel":"2025-12-05","frm":"CAN","to":"YPR","ref":"4429122356","base":890.0,"sc":42.34,"fee":100.0,"gst":18.0,"total":1050.34,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgun"},{"month":"Nov'25","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2025-11-25","travel":"2025-12-02","frm":"YPR","to":"CAN","ref":"4541316921","base":890.0,"sc":42.34,"fee":100.0,"gst":18.0,"total":1050.34,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgun"},{"month":"Nov'25","acct":"Oxbow","mode":"Bus","refund":true,"booked":"2025-11-25","travel":"2025-11-26","frm":"SBC","to":"CAN","ref":"CAT39UP9","base":-1061.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-1061.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgun"},{"month":"Nov'25","acct":"Oxbow","mode":"Air","refund":false,"booked":"2025-11-27","travel":"2025-12-03","frm":"RDP","to":"BLR","ref":"F1EKQL","base":7900.0,"sc":1987.0,"fee":150.0,"gst":27.0,"total":10064.0,"name":"Srimantha Chatterjee","pax":1,"raw":"Srimantha Chatterjee"},{"month":"Nov'25","acct":"Oxbow","mode":"Air","refund":false,"booked":"2025-11-27","travel":"2025-12-17","frm":"BLR","to":"RDP","ref":"TCVMNX","base":7900.0,"sc":1809.0,"fee":150.0,"gst":27.0,"total":9886.0,"name":"Srimantha Chatterjee","pax":1,"raw":"Srimantha Chatterjee"},{"month":"Dec'25","acct":"Johars","mode":"Hotel","refund":false,"booked":"2025-12-05","travel":"2025-12-09","frm":"HYD","to":"HYD","ref":"Hotel D&J Grande","base":6565.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":7804.0,"name":"Mallesh L","pax":1,"raw":"Mallesh L"},{"month":"Dec'25","acct":"Johars","mode":"Rail","refund":false,"booked":"2025-12-06","travel":"2025-12-12","frm":"KCG","to":"YPR","ref":"4329700824","base":1610.0,"sc":47.74,"fee":100.0,"gst":18.0,"total":1775.74,"name":"Mallesh L","pax":1,"raw":"Mallesh L"},{"month":"Dec'25","acct":"Johars","mode":"Rail","refund":false,"booked":"2025-12-06","travel":"2025-12-09","frm":"YPR","to":"KCG","ref":"4429700515","base":1555.0,"sc":47.33,"fee":100.0,"gst":18.0,"total":1720.33,"name":"Mallesh L","pax":1,"raw":"Mallesh L"},{"month":"Dec'25","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2025-12-01","travel":"2025-12-03","frm":"CAN","to":"YPR","ref":"Hotel Samrat","base":5066.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":5892.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgun"},{"month":"Dec'25","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2025-12-13","travel":"2025-12-17","frm":"SBC","to":"CAN","ref":"4230080903","base":3500.0,"sc":70.75,"fee":160.0,"gst":28.8,"total":3759.55,"name":"Nitish TV","pax":2,"raw":"Nitish +1"},{"month":"Dec'25","acct":"Oxbow","mode":"Bus","refund":false,"booked":"2025-12-15","travel":"2025-12-19","frm":"CAN","to":"YPR","ref":"TS251215153937525086SJBN","base":2814.0,"sc":0.0,"fee":150.0,"gst":27.0,"total":2991.0,"name":"Nitish TV","pax":2,"raw":"Nitish +1"},{"month":"Dec'25","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2025-12-15","travel":"2025-12-17","frm":"CAN","to":"YPR","ref":"Hotel Samrat","base":5232.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":6058.0,"name":"Nitish TV","pax":2,"raw":"Nitish +1"},{"month":"Dec'25","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2025-12-20","travel":"2026-01-08","frm":"YPR","to":"CAN","ref":"The Singh Empire","base":7822.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":8648.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Dec'25","acct":"Oxbow","mode":"Air","refund":false,"booked":"2025-12-20","travel":"2026-01-08","frm":"SBC","to":"CAN","ref":"Z3SQVY","base":5839.0,"sc":1306.0,"fee":150.0,"gst":27.0,"total":7322.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jan'26","acct":"Johars","mode":"Air","refund":false,"booked":"2026-01-11","travel":"2026-01-19","frm":"COK","to":"NMI","ref":"A8PPWG","base":8273.0,"sc":3362.0,"fee":150.0,"gst":27.0,"total":11812.0,"name":"Manoj Alappat","pax":1,"raw":"Manoj Alappat"},{"month":"Jan'26","acct":"Johars","mode":"Hotel","refund":false,"booked":"2026-01-14","travel":"2026-01-19","frm":"BOM","to":"BOM","ref":"Ginger Thane","base":8159.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":8985.0,"name":"Manoj Alappat","pax":1,"raw":"Manoj Alappat"},{"month":"Jan'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-01-17","travel":"2026-01-19","frm":"BOM","to":"DEL","ref":"X7IKNB","base":4250.0,"sc":2100.0,"fee":150.0,"gst":27.0,"total":6527.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jan'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-01-17","travel":"2026-01-29","frm":"LKO","to":"BOM","ref":"N5984C","base":4100.0,"sc":2076.0,"fee":150.0,"gst":27.0,"total":6353.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jan'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-01-17","travel":"2026-01-19","frm":"DEL","to":"DEL","ref":"The Gold Regency @ Paharganj","base":2557.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2970.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jan'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-01-17","travel":"2026-01-25","frm":"DEL","to":"DEL","ref":"The Gold Regency @ Paharganj","base":8670.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":9909.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jan'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-01-17","travel":"2026-01-20","frm":"NDLS","to":"CDG","ref":"2945189259","base":795.0,"sc":41.63,"fee":100.0,"gst":18.0,"total":954.63,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jan'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-01-17","travel":"2026-01-25","frm":"KUN","to":"NDLS","ref":"2945189451","base":335.0,"sc":38.18,"fee":100.0,"gst":18.0,"total":491.18,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jan'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-01-17","travel":"2026-01-28","frm":"NDLS","to":"LJN","ref":"2829821559","base":1045.0,"sc":43.5,"fee":100.0,"gst":18.0,"total":1206.5,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jan'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-01-25","travel":"2026-01-26","frm":"SXR","to":"DEL","ref":"RDVJGH","base":8147.0,"sc":2612.0,"fee":150.0,"gst":27.0,"total":10936.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-06","travel":"2026-02-06","frm":"BOM","to":"DEL","ref":"FBFBPX","base":10341.0,"sc":1829.0,"fee":150.0,"gst":27.0,"total":12347.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-06","travel":"2026-02-15","frm":"CCU","to":"IMF","ref":"PKTGJR","base":4053.0,"sc":1525.0,"fee":150.0,"gst":27.0,"total":5755.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-06","travel":"2026-02-17","frm":"IMF","to":"BOM","ref":"VGPT7A","base":7600.0,"sc":1684.0,"fee":150.0,"gst":27.0,"total":9461.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-06","travel":"2026-02-12","frm":"DEL","to":"CCU","ref":"FBLPJQ","base":5598.0,"sc":1391.0,"fee":150.0,"gst":27.0,"total":7166.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-02-06","travel":"2026-02-11","frm":"DDN","to":"NDLS","ref":"2512105413","base":920.0,"sc":42.57,"fee":100.0,"gst":18.0,"total":1080.57,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-02-07","travel":"2026-02-09","frm":"DEL","to":"DEL","ref":"Rahul Palace by Golden Tree @Karol Bagh","base":3245.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":3658.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-02-09","travel":"2026-02-11","frm":"DEL","to":"DEL","ref":"Rahul Palace by Golden Tree @Karol Bagh","base":3175.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":3588.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-02-18","travel":"2026-02-18","frm":"LDH","to":"LDH","ref":"Hotel The Taksonz","base":2053.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2466.0,"name":"Ravi Kumar","pax":1,"raw":"Ravi Kumar"},{"month":"Feb'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-02-21","travel":"2026-02-24","frm":"DR","to":"PUNE","ref":"8344896952","base":955.0,"sc":42.83,"fee":140.0,"gst":25.2,"total":1163.03,"name":"Rahul Johar","pax":1,"raw":"Rahul Johar"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-25","travel":"2026-03-09","frm":"BLR","to":"DEL","ref":"D35X4M","base":5777.0,"sc":2092.0,"fee":150.0,"gst":27.0,"total":8046.0,"name":"Nitish TV","pax":1,"raw":"Nitish TV"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-25","travel":"2026-03-14","frm":"DEL","to":"BLR","ref":"D39KHY","base":6337.0,"sc":1557.0,"fee":150.0,"gst":27.0,"total":8071.0,"name":"Nitish TV","pax":1,"raw":"Nitish TV"},{"month":"Feb'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-02-28","travel":"2026-03-02","frm":"SMVB","to":"ERN","ref":"4941257307","base":1255.0,"sc":45.08,"fee":100.0,"gst":18.0,"total":1418.08,"name":"Shivaa Shankar H","pax":1,"raw":"Shivaa Shankar"},{"month":"Feb'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-02-28","travel":"2026-03-05","frm":"ERN","to":"SMVB","ref":"4646852418","base":1125.0,"sc":44.1,"fee":100.0,"gst":18.0,"total":1287.1,"name":"Shivaa Shankar H","pax":1,"raw":"Shivaa Shankar"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-28","travel":"2026-03-09","frm":"BOM","to":"BLR","ref":"P7TUPM","base":6800.0,"sc":1149.0,"fee":150.0,"gst":27.0,"total":8126.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-28","travel":"2026-03-10","frm":"BLR","to":"HYD","ref":"L9M54T","base":3099.0,"sc":1458.0,"fee":150.0,"gst":27.0,"total":4734.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-28","travel":"2026-03-11","frm":"HYD","to":"DEL","ref":"EKPC94","base":3831.0,"sc":2289.0,"fee":150.0,"gst":27.0,"total":6297.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Feb'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-02-28","travel":"2026-03-14","frm":"DEL","to":"BOM","ref":"EKT9UE","base":5376.0,"sc":1694.0,"fee":150.0,"gst":27.0,"total":7247.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-03-01","travel":"2026-03-03","frm":"None","to":"None","ref":"Park Central","base":4285.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":5111.0,"name":"Shivaa Shankar H","pax":1,"raw":"Shivaa Shankar"},{"month":"Mar'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-03-02","travel":"2026-03-09","frm":"None","to":"None","ref":"Olive Zip Domlur by Embassy Group","base":2054.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2467.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-03-02","travel":"2026-03-10","frm":"None","to":"None","ref":"Treebo Address Inn, Banjara Hills","base":2067.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2480.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-03-02","travel":"2026-03-11","frm":"None","to":"None","ref":"Hotel Star Palace","base":10685.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":11924.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-03-11","travel":"2026-03-11","frm":"HYD","to":"DEL","ref":"T4ZFFY","base":7108.0,"sc":2203.0,"fee":150.0,"gst":27.0,"total":9488.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":true,"booked":"2026-03-11","travel":"2026-03-11","frm":"HYD","to":"DEL","ref":"EKPC94","base":-6120.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-6120.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-03-24","travel":"2026-04-08","frm":"BLR","to":"BOM","ref":"TENNUX","base":4500.0,"sc":2174.0,"fee":150.0,"gst":27.0,"total":6851.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-03-24","travel":"2026-04-05","frm":"BOM","to":"BLR","ref":"YKHR7E","base":4696.0,"sc":1652.0,"fee":150.0,"gst":27.0,"total":6525.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-03-28","travel":"2026-04-05","frm":"None","to":"None","ref":"Earth Hotels Domlur","base":6961.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":8200.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-03-28","travel":"2026-04-23","frm":"KYQ","to":"HWH","ref":"6201355303","base":2435.0,"sc":60.1,"fee":100.0,"gst":18.0,"total":2613.1,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-03-28","travel":"2026-05-11","frm":"JAT","to":"NDLS","ref":"2253158780","base":1525.0,"sc":47.1,"fee":100.0,"gst":18.0,"total":1690.1,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-03-28","travel":"2026-05-14","frm":"NZM","to":"MMCT","ref":"2733850257","base":3165.0,"sc":67.4,"fee":100.0,"gst":18.0,"total":3350.4,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-03-30","travel":"2026-03-09","frm":"BLR","to":"DEL","ref":"D35X4M","base":5777.0,"sc":2092.0,"fee":150.0,"gst":27.0,"total":8046.0,"name":"Nitish TV","pax":1,"raw":"Nitish TV"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-03-30","travel":"2026-03-14","frm":"DEL","to":"BLR","ref":"D39KHY","base":6337.0,"sc":1557.0,"fee":150.0,"gst":27.0,"total":8071.0,"name":"Nitish TV","pax":1,"raw":"Nitish TV"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-03-30","travel":"2026-04-14","frm":"BOM","to":"DEL","ref":"B4L3NV","base":6049.0,"sc":1773.0,"fee":150.0,"gst":27.0,"total":7999.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-03-30","travel":"2026-04-18","frm":"DEL","to":"CCU","ref":"ES9BMF","base":6106.0,"sc":1732.0,"fee":150.0,"gst":27.0,"total":8015.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-03-30","travel":"2026-04-30","frm":"CCU","to":"BOM","ref":"TGJSPE","base":5119.0,"sc":2189.0,"fee":150.0,"gst":27.0,"total":7485.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-03-30","travel":"2026-05-07","frm":"BOM","to":"SXR","ref":"L7JN9N","base":11000.0,"sc":3350.0,"fee":150.0,"gst":27.0,"total":14527.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-03-30","travel":"2026-04-22","frm":"NJP","to":"GHY","ref":"6601428792","base":1090.0,"sc":43.84,"fee":100.0,"gst":18.0,"total":1251.84,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-03-30","travel":"2026-04-21","frm":"HWH","to":"NJP","ref":"6101428699","base":1585.0,"sc":47.55,"fee":100.0,"gst":18.0,"total":1750.55,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-03-30","travel":"2026-04-16","frm":"DDN","to":"NDLS","ref":"2353246968","base":920.0,"sc":42.57,"fee":100.0,"gst":18.0,"total":1080.57,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-03-30","travel":"2026-04-15","frm":"NDLS","to":"CDG","ref":"2353250570","base":665.0,"sc":40.65,"fee":100.0,"gst":18.0,"total":823.65,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Mar'26","acct":"Johars","mode":"Air","refund":false,"booked":"2026-02-25","travel":"2026-03-09","frm":"BLR","to":"DEL","ref":"D35X4M","base":5777.0,"sc":2092.0,"fee":150.0,"gst":27.0,"total":8046.0,"name":"Nitish TV","pax":1,"raw":"Nitish TV"},{"month":"Mar'26","acct":"Johars","mode":"Air","refund":false,"booked":"2026-02-25","travel":"2026-03-14","frm":"DEL","to":"BLR","ref":"D39KHY","base":6337.0,"sc":1557.0,"fee":150.0,"gst":27.0,"total":8071.0,"name":"Nitish TV","pax":1,"raw":"Nitish TV"},{"month":"Apr'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-04-14","travel":"2026-04-14","frm":"DEL","to":"DEL","ref":"The Northern Palace","base":1966.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2379.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Apr'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-04-14","travel":"2026-04-15","frm":"Zirakpur","to":"Zirakpur","ref":"Hotel Dreamland Inn Zirakpur","base":1861.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2274.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Apr'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-04-14","travel":"2026-04-21","frm":"Siliguri","to":"Siliguri","ref":"Mount Embassy","base":1909.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2322.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Apr'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-04-15","travel":"2026-04-16","frm":"DEL","to":"DEL","ref":"Rahul Palace by Golden Tree","base":6533.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":7359.0,"name":"Shaikh Meraj","pax":2,"raw":"Shaikh Meraj +1"},{"month":"Apr'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-04-17","travel":"2026-04-22","frm":"GHY","to":"GHY","ref":"Treebo Arna Residency","base":2176.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2589.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Apr'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-04-25","travel":"2026-04-26","frm":"SBC","to":"ERS","ref":"4649856806","base":2075.0,"sc":35.0,"fee":500.0,"gst":90.0,"total":2700.0,"name":"Shivaa Shankar H","pax":1,"raw":"Shivva Shankar H"},{"month":"Apr'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-04-25","travel":"2026-04-26","frm":"Cochin","to":"Cochin","ref":"Park Central","base":6283.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":7522.0,"name":"Shivaa Shankar H","pax":1,"raw":"Shivva Shankar H"},{"month":"Apr'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-04-25","travel":"2026-05-07","frm":"Srinagar","to":"Srinagar","ref":"Hotel PACIFIC - A Boutique Hotel","base":9659.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":10898.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Apr'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-04-28","travel":"2026-04-29","frm":"ERN","to":"YPR","ref":"4944412313","base":1615.0,"sc":35.0,"fee":500.0,"gst":90.0,"total":2240.0,"name":"Shivaa Shankar H","pax":1,"raw":"Shivva Shankar H"},{"month":"Apr'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-04-30","travel":"2026-05-11","frm":"DEL","to":"DEL","ref":"Rahul Palace by Golden Tree","base":12657.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":13896.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Apr'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-04-30","travel":"2026-05-10","frm":"Jammu","to":"Jammu","ref":"Le ROI, Jammu","base":3073.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":3486.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Apr'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-04-30","travel":"2026-05-15","frm":"CAN","to":"YPR","ref":"4857360861","base":1455.0,"sc":47.0,"fee":100.0,"gst":18.0,"total":1620.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam"},{"month":"Apr'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-04-30","travel":"2026-05-12","frm":"SBC","to":"CAN","ref":"4437391651","base":910.0,"sc":42.0,"fee":100.0,"gst":18.0,"total":1070.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam"},{"month":"May'26","acct":"Johars","mode":"Rail","refund":false,"booked":"2026-05-20","travel":"2026-05-28","frm":"NDLS","to":"CDG","ref":"2518142971","base":840.0,"sc":41.97,"fee":100.0,"gst":18.0,"total":1000.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venka"},{"month":"May'26","acct":"Johars","mode":"Air","refund":false,"booked":"2026-05-20","travel":"2026-05-25","frm":"NLR","to":"DEL","ref":"N9GNVD","base":8010.0,"sc":940.0,"fee":150.0,"gst":27.0,"total":9127.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venka"},{"month":"May'26","acct":"Johars","mode":"Air","refund":false,"booked":"2026-05-20","travel":"2026-05-29","frm":"IXC","to":"BLR","ref":"K1BI8Y","base":13186.0,"sc":3250.0,"fee":150.0,"gst":27.0,"total":16613.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venka"},{"month":"May'26","acct":"Oxbow","mode":"Rail","refund":true,"booked":"2026-05-11","travel":"2026-05-14","frm":"NZM","to":"MMCT","ref":"2733850257","base":-2975.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-2975.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"May'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-05-11","travel":"2026-05-12","frm":"DEL","to":"BOM","ref":"Q9Q6SG","base":6170.0,"sc":990.0,"fee":150.0,"gst":27.0,"total":7337.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"May'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-05-11","travel":"2026-05-13","frm":"Kannur","to":"Kannur","ref":"NH21047484750978","base":6407.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":7233.0,"name":"Neha Uttam Adgunkar","pax":2,"raw":"Neha Uttam +1"},{"month":"May'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-05-16","travel":"2026-05-18","frm":"YPR","to":"CHZ","ref":"4550395682","base":1630.0,"sc":47.89,"fee":160.0,"gst":28.8,"total":1866.69,"name":"Neha Uttam Adgunkar","pax":2,"raw":"Neha Uttam +1"},{"month":"May'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-05-16","travel":"2026-05-18","frm":"HYD","to":"HYD","ref":"NH20009486136138","base":6362.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":7188.0,"name":"Shivaa Shankar H","pax":2,"raw":"Shivva Shankar H +1"},{"month":"May'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-05-16","travel":"2026-05-22","frm":"BLR","to":"BOM","ref":"C6EL7Z","base":8386.0,"sc":999.0,"fee":150.0,"gst":27.0,"total":9562.0,"name":"Shivaa Shankar H","pax":1,"raw":"Shivva Shankar H"},{"month":"May'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-05-16","travel":"2026-05-25","frm":"BOM","to":"BLR","ref":"K8V3UW","base":9065.0,"sc":1677.0,"fee":150.0,"gst":27.0,"total":10919.0,"name":"Shivaa Shankar H","pax":1,"raw":"Shivva Shankar H"},{"month":"May'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-05-19","travel":"2026-05-20","frm":"KCG","to":"YNK","ref":"4858305189","base":3720.0,"sc":72.95,"fee":1040.0,"gst":187.2,"total":5020.15,"name":"Neha Uttam Adgunkar","pax":2,"raw":"Neha Uttam +1"},{"month":"May'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-05-20","travel":"2026-05-22","frm":"Thane","to":"Thane","ref":"NH22153487112434","base":2894.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":3307.0,"name":"Shivaa Shankar H","pax":1,"raw":"ShivVa Shankar H"},{"month":"May'26","acct":"Oxbow","mode":"Bus","refund":false,"booked":"2026-05-21","travel":"2026-05-25","frm":"BLR","to":"ERS","ref":"IC244346369666","base":2580.0,"sc":0.0,"fee":75.0,"gst":13.5,"total":2668.5,"name":"Arun Mohan M","pax":1,"raw":"Arun Mohan M"},{"month":"May'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-05-23","travel":"2026-05-23","frm":"Thane","to":"Thane","ref":"NH25205487908258","base":6383.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":7209.0,"name":"Shivaa Shankar H","pax":1,"raw":"Shivva Shankar H"},{"month":"May'26","acct":"Oxbow","mode":"Bus","refund":false,"booked":"2026-05-25","travel":"2026-05-28","frm":"SBC","to":"VYTTILA","ref":"IC245545661914","base":2475.0,"sc":0.0,"fee":75.0,"gst":13.5,"total":2563.5,"name":"Arun Mohan M","pax":1,"raw":"Arun Mohan M"},{"month":"May'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-05-28","travel":"2026-06-10","frm":"BOM","to":"BLR","ref":"OB7JYW","base":8978.0,"sc":4221.0,"fee":300.0,"gst":54.0,"total":13553.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"May'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-05-28","travel":"2026-06-13","frm":"BLR","to":"BOM","ref":"OB7JYW","base":0.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":0.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"May'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-05-28","travel":"2026-06-04","frm":"DEL","to":"BOM","ref":"AFZGXR","base":6724.0,"sc":1512.0,"fee":150.0,"gst":27.0,"total":8413.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"May'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-05-28","travel":"2026-06-01","frm":"BOM","to":"DEL","ref":"A65MKJ","base":6044.0,"sc":2329.0,"fee":150.0,"gst":27.0,"total":8550.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"May'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-05-30","travel":"2026-06-01","frm":"DEL","to":"DEL","ref":"NH25181489870724","base":10724.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":11963.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-06-04","travel":"2026-06-10","frm":"BLR","to":"BLR","ref":"Ginger Bangalore","base":11037.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":12276.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-06-15","travel":"2026-06-16","frm":"KERALA","to":"KERALA","ref":"Marine Inn Hotel","base":4361.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":4774.0,"name":"Rajeevkumar C","pax":2,"raw":"Rajeevkumar C+1"},{"month":"Jun'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-06-19","travel":"2026-07-10","frm":"BLR","to":"PNQ","ref":"LYJK3A","base":3144.0,"sc":2017.0,"fee":150.0,"gst":27.0,"total":5338.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Jun'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-06-19","travel":"2026-07-12","frm":"PNQ","to":"BLR","ref":"CYC7HG","base":3854.0,"sc":1763.0,"fee":150.0,"gst":27.0,"total":5794.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Jun'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-06-22","travel":"2026-07-06","frm":"AII","to":"KYN","ref":"2458139760","base":2380.0,"sc":59.55,"fee":100.0,"gst":18.0,"total":2557.55,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-06-22","travel":"2026-07-02","frm":"LJN","to":"NDLS","ref":"2358140103","base":1270.0,"sc":45.19,"fee":100.0,"gst":18.0,"total":1433.19,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-06-22","travel":"2026-07-01","frm":"NDLS","to":"LJN","ref":"2620052034","base":1120.0,"sc":44.07,"fee":100.0,"gst":18.0,"total":1282.07,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-06-22","travel":"2026-07-10","frm":"PUNE","to":"PUNE","ref":"Hotel Vrindavan, Nigdi, Pune","base":5457.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":6283.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Jun'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-06-24","travel":"2026-06-29","frm":"BOM","to":"DEL","ref":"QYISHJ","base":6882.0,"sc":2037.0,"fee":150.0,"gst":27.0,"total":9096.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-06-24","travel":"2026-07-14","frm":"BOM","to":"BLR","ref":"EEFG7X","base":10369.0,"sc":3884.0,"fee":150.0,"gst":27.0,"total":14430.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-06-24","travel":"2026-07-17","frm":"BLR","to":"BOM","ref":"EEFG7X","base":0.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":0.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-06-26","travel":"2026-06-30","frm":"BLR","to":"BOM","ref":"T66RFI","base":4930.0,"sc":2370.0,"fee":150.0,"gst":27.0,"total":7477.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"YARRADODDI VENKATA VIJAY KUMAR"},{"month":"Jun'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-06-27","travel":"2026-07-02","frm":"BOM","to":"HYD","ref":"JYDR9G","base":4440.0,"sc":1814.0,"fee":150.0,"gst":27.0,"total":6431.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"YARRADODDI VENKATA VIJAY KUMAR"},{"month":"Jun'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-06-27","travel":"2026-07-02","frm":"DEL","to":"DEL","ref":"Jukaso Inn Down Town","base":13061.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":14300.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-06-29","travel":"2026-06-29","frm":"DEL","to":"DEL","ref":"Jukaso Inn Down Town","base":6749.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":7575.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-06-29","travel":"2026-07-01","frm":"LKO","to":"LKO","ref":"Hotel Majestic Lucknow","base":1649.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2062.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jun'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-06-29","travel":"2026-06-30","frm":"BOM","to":"BOM","ref":"Vishal Hall","base":5523.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":6349.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"YARRADODDI VENKATA VIJAY KUMAR"},{"month":"Jul'26","acct":"Johars","mode":"Bus","refund":false,"booked":"2026-07-07","travel":"2026-07-10","frm":"MAS","to":"SBC","ref":"FMNJB4507C170","base":1468.0,"sc":0.0,"fee":75.0,"gst":13.5,"total":1556.5,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venkata Vijay Kumar"},{"month":"Jul'26","acct":"Johars","mode":"Rail","refund":false,"booked":"2026-07-07","travel":"2026-07-09","frm":"SBC","to":"MAS","ref":"4240892598","base":1000.0,"sc":43.0,"fee":100.0,"gst":18.0,"total":1161.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venkata Vijay Kumar"},{"month":"Jul'26","acct":"Johars","mode":"Bus","refund":false,"booked":"2026-07-15","travel":"2026-07-15","frm":"BLR","to":"HYD","ref":"244997638","base":1824.0,"sc":0.0,"fee":75.0,"gst":13.5,"total":1912.5,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venkata Vijay Kumar"},{"month":"Jul'26","acct":"Johars","mode":"Air","refund":false,"booked":"2026-06-26","travel":"2026-06-30","frm":"BLR","to":"BOM","ref":"T66RFI","base":4930.0,"sc":2370.0,"fee":150.0,"gst":27.0,"total":7477.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venkata Vijay Kumar"},{"month":"Jul'26","acct":"Johars","mode":"Air","refund":false,"booked":"2026-06-27","travel":"2026-07-02","frm":"BOM","to":"HYD","ref":"JYDR9G","base":4440.0,"sc":1814.0,"fee":150.0,"gst":27.0,"total":6431.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venkata Vijay Kumar"},{"month":"Jul'26","acct":"Johars","mode":"Hotel","refund":false,"booked":"2026-06-29","travel":"2026-06-30","frm":"BOM","to":"BOM","ref":"NH24169497840428","base":5523.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":6349.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venkata Vijay Kumar"},{"month":"Jul'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-07-07","travel":"2026-07-31","frm":"ANVT","to":"DDN","ref":"2955076946","base":1075.0,"sc":44.0,"fee":100.0,"gst":18.0,"total":1237.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-07-07","travel":"2026-08-03","frm":"DDN","to":"ANVT","ref":"2359017433","base":910.0,"sc":42.0,"fee":100.0,"gst":18.0,"total":1070.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":true,"booked":"2026-07-07","travel":"2026-07-10","frm":"BLR","to":"PNQ","ref":"LYJK3A","base":-1161.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-1161.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":true,"booked":"2026-07-07","travel":"2026-07-10","frm":"PUNE","to":"PUNE","ref":"Hotel Vrindavan, Nigdi, Pune","base":-5257.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-5257.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":true,"booked":"2026-07-08","travel":"2026-07-12","frm":"PNQ","to":"BLR","ref":"CYC7HG","base":-1117.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-1117.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-07-10","travel":"2026-07-18","frm":"GOI","to":"BOM","ref":"FCUCWQ","base":3600.0,"sc":2092.0,"fee":150.0,"gst":27.0,"total":5869.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-07-10","travel":"2026-07-17","frm":"BOM","to":"GOI","ref":"7EUV2D","base":3000.0,"sc":2263.0,"fee":150.0,"gst":27.0,"total":5440.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-11","travel":"2026-07-14","frm":"BLR","to":"BLR","ref":"FabHotel Royal Wood Premier","base":5582.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":6821.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-11","travel":"2026-07-17","frm":"GOA","to":"GOA","ref":"Hotel Royal Altis Goa","base":3306.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":3719.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-11","travel":"2026-07-16","frm":"BLR","to":"BLR","ref":"FabHotel Royal Wood Premier","base":5505.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":5918.0,"name":"Arun Mohan M","pax":3,"raw":"Arun Mohan +2"},{"month":"Jul'26","acct":"Oxbow","mode":"Bus","refund":false,"booked":"2026-07-11","travel":"2026-07-15","frm":"ERS","to":"SBC","ref":"TS260711001617250469FQEO","base":6128.0,"sc":0.0,"fee":225.0,"gst":40.5,"total":6393.5,"name":"Arun Mohan M","pax":3,"raw":"Arun Mohan +2"},{"month":"Jul'26","acct":"Oxbow","mode":"Bus","refund":false,"booked":"2026-07-11","travel":"2026-07-17","frm":"SBC","to":"ERS","ref":"IC260694037593","base":8370.0,"sc":0.0,"fee":225.0,"gst":40.5,"total":8635.5,"name":"Arun Mohan M","pax":3,"raw":"Arun Mohan +2"},{"month":"Jul'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-07-11","travel":"2026-07-24","frm":"BVI","to":"ADI","ref":"8650773912","base":1170.0,"sc":44.0,"fee":100.0,"gst":18.0,"total":1332.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-07-11","travel":"2026-07-25","frm":"ADI","to":"BVI","ref":"8650773888","base":1335.0,"sc":46.0,"fee":100.0,"gst":18.0,"total":1499.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Bus","refund":true,"booked":"2026-07-13","travel":"2026-07-15","frm":"ERS","to":"SBC","ref":"TS260711001617250469FQEO","base":-5828.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-5828.0,"name":"Arun Mohan M","pax":3,"raw":"Arun Mohan +2"},{"month":"Jul'26","acct":"Oxbow","mode":"Bus","refund":false,"booked":"2026-07-14","travel":"2026-07-15","frm":"ERS","to":"SBC","ref":"ACLQ7E945W228","base":4873.0,"sc":0.0,"fee":225.0,"gst":40.5,"total":5138.5,"name":"Arun Mohan M","pax":3,"raw":"Arun Mohan +2"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":true,"booked":"2026-07-15","travel":"2026-07-17","frm":"BLR","to":"BOM","ref":"EEFG7X","base":-3408.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-3408.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-07-16","travel":"2026-08-17","frm":"BOM","to":"BLR","ref":"EH4Q9B","base":5231.0,"sc":1644.0,"fee":150.0,"gst":27.0,"total":7052.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-07-16","travel":"2026-08-22","frm":"BLR","to":"BOM","ref":"N6C9VI","base":4930.0,"sc":2170.0,"fee":150.0,"gst":27.0,"total":7277.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-07-16","travel":"2026-07-29","frm":"BOM","to":"DEL","ref":"GY8P2A","base":6169.0,"sc":1448.0,"fee":150.0,"gst":27.0,"total":7794.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-07-18","travel":"2026-08-06","frm":"DEL","to":"BOM","ref":"S4VD2S","base":6152.0,"sc":1340.0,"fee":150.0,"gst":27.0,"total":7669.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-18","travel":"2026-07-24","frm":"Gujrat","to":"Gujrat","ref":"Hotel Surya Palace","base":2831.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":3244.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-07-21","travel":"2026-07-24","frm":"ADI","to":"GNC","ref":"8351190350","base":380.0,"sc":39.0,"fee":100.0,"gst":18.0,"total":537.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-23","travel":"2026-08-03","frm":"DEL","to":"DEL","ref":"Jukaso Inn Down Town","base":11853.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":13092.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-23","travel":"2026-07-29","frm":"DEL","to":"DEL","ref":"The Northern Palace @ 3 mins from Connaught Place","base":5050.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":5876.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-24","travel":"2026-08-03","frm":"Pune","to":"Pune","ref":"Hotel Vrindavan, Nigdi, Pune","base":5538.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":6364.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-07-24","travel":"2026-08-03","frm":"BLR","to":"PNQ","ref":"LGQC7E","base":4000.0,"sc":2034.0,"fee":150.0,"gst":27.0,"total":6211.0,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Jul'26","acct":"Oxbow","mode":"Bus","refund":false,"booked":"2026-07-25","travel":"2026-08-05","frm":"PUNE","to":"BGM","ref":"245720895","base":1416.0,"sc":0.0,"fee":75.0,"gst":13.5,"total":1504.5,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Jul'26","acct":"Oxbow","mode":"Rail","refund":true,"booked":"2026-07-25","travel":"2026-07-24","frm":"ADI","to":"GNC","ref":"8351190350","base":-380.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-380.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Rail","refund":true,"booked":"2026-07-25","travel":"2026-07-24","frm":"BVI","to":"ADI","ref":"8650773912","base":-1170.0,"sc":0.0,"fee":0.0,"gst":0.0,"total":-1170.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-27","travel":"2026-07-31","frm":"Dehradun","to":"Dehradun","ref":"Hotel Le Roi Dehradun","base":2630.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":3043.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-27","travel":"2026-08-02","frm":"Dehradun","to":"Dehradun","ref":"Hotel Le Roi Dehradun","base":2431.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":2844.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-07-29","travel":"2026-08-01","frm":"Mussorie","to":"Mussorie","ref":"Treebo Raj Mall Road","base":3244.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":3657.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":true,"booked":"2026-07-31","travel":"2026-06-30","frm":"BLR","to":"BOM","ref":"T66RFI","base":-4930.0,"sc":-2370.0,"fee":-150.0,"gst":-27.0,"total":-7477.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venkata Vijay Kumar"},{"month":"Jul'26","acct":"Oxbow","mode":"Air","refund":true,"booked":"2026-07-31","travel":"2026-07-02","frm":"BOM","to":"HYD","ref":"JYDR9G","base":-4440.0,"sc":-1814.0,"fee":-150.0,"gst":-27.0,"total":-6431.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venkata Vijay Kumar"},{"month":"Jul'26","acct":"Oxbow","mode":"Hotel","refund":true,"booked":"2026-07-31","travel":"2026-06-30","frm":"BOM","to":"BOM","ref":"Vishal Hall","base":-5523.0,"sc":0.0,"fee":-700.0,"gst":-126.0,"total":-6349.0,"name":"Yarradoddi Venkata Vijay Kumar","pax":1,"raw":"Yarradoddi Venkata Vijay Kumar"},{"month":"Aug'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-08-03","travel":"2026-08-04","frm":"DEL","to":"DEL","ref":"Jukaso Inn Down Town","base":8859.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":9685.0,"name":"Rahul Johar","pax":1,"raw":"Rahul Johar"},{"month":"Aug'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-08-04","travel":"2026-08-05","frm":"BLR","to":"DEL","ref":"G5PGKI","base":10197.0,"sc":629.0,"fee":150.0,"gst":27.0,"total":11003.0,"name":"Balaji V","pax":1,"raw":"Balaji V"},{"month":"Aug'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-08-04","travel":"2026-08-06","frm":"DEL","to":"BLR","ref":"KCE23D","base":10198.0,"sc":427.0,"fee":150.0,"gst":27.0,"total":10802.0,"name":"Balaji V","pax":1,"raw":"Balaji V"},{"month":"Aug'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-08-07","travel":"2026-08-17","frm":"BLR","to":"BLR","ref":"Olive Zip Domlur by Embassy Group","base":4706.0,"sc":0.0,"fee":700.0,"gst":126.0,"total":5532.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Aug'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-08-07","travel":"2026-08-29","frm":"BLR","to":"BLR","ref":"The Coraltree Hotel","base":9795.0,"sc":0.0,"fee":1050.0,"gst":189.0,"total":11034.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Aug'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-08-14","travel":"2026-08-19","frm":"SBC","to":"MAS","ref":"4342959605","base":1890.0,"sc":50.0,"fee":160.0,"gst":28.8,"total":2128.8,"name":"Neha Uttam Adgunkar","pax":2,"raw":"Neha Uttam Adgunkar+1"},{"month":"Aug'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-08-18","travel":"2026-08-19","frm":"MAS","to":"SBC","ref":"4763135238","base":1565.0,"sc":47.0,"fee":540.0,"gst":97.2,"total":2249.2,"name":"Shivaa Shankar H","pax":1,"raw":"Shivshankar"},{"month":"Aug'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-08-18","travel":"2026-08-19","frm":"MAS","to":"MDU","ref":"4655903671","base":1750.0,"sc":49.0,"fee":540.0,"gst":97.2,"total":2436.2,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Aug'26","acct":"Oxbow","mode":"Hotel","refund":false,"booked":"2026-08-19","travel":"2026-08-20","frm":"Madurai","to":"Madurai","ref":"Annamalai Grand","base":3136.0,"sc":0.0,"fee":350.0,"gst":63.0,"total":3549.0,"name":"Neha Uttam Adgunkar","pax":2,"raw":"Neha Uttam Adgunkar +1"},{"month":"Aug'26","acct":"Oxbow","mode":"Bus","refund":false,"booked":"2026-08-20","travel":"2026-08-21","frm":"Madurai","to":"Bangalore","ref":"9BUPQTMR","base":1330.0,"sc":0.0,"fee":75.0,"gst":13.5,"total":1418.5,"name":"Neha Uttam Adgunkar","pax":1,"raw":"Neha Uttam Adgunkar"},{"month":"Aug'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-08-25","travel":"2026-08-27","frm":"BOM","to":"DEL","ref":"N6L78J","base":6567.0,"sc":552.0,"fee":150.0,"gst":27.0,"total":7296.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Aug'26","acct":"Oxbow","mode":"Air","refund":false,"booked":"2026-08-25","travel":"2026-08-27","frm":"DEL","to":"BOM","ref":"ES4BNJ","base":7132.0,"sc":427.0,"fee":150.0,"gst":27.0,"total":7736.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Aug'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-08-30","travel":"2026-09-08","frm":"BRC","to":"BVI","ref":"8652856488","base":1175.0,"sc":44.0,"fee":100.0,"gst":18.0,"total":1337.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"},{"month":"Aug'26","acct":"Oxbow","mode":"Rail","refund":false,"booked":"2026-08-30","travel":"2026-09-08","frm":"BVI","to":"BRC","ref":"8552857133","base":1010.0,"sc":43.0,"fee":100.0,"gst":18.0,"total":1171.0,"name":"Shaikh Meraj","pax":1,"raw":"Shaikh Meraj"}];
+const META = {"months": ["Nov'25", "Dec'25", "Jan'26", "Feb'26", "Mar'26", "Apr'26", "May'26", "Jun'26", "Jul'26", "Aug'26"], "period": "Nov 2025 – Aug 2026", "pulled": "27 Sep 2026", "notes": ["Source: the monthly <b>Billing Details</b> workbooks in WorkDrive › Insights › Claude Integration › Travel bills FY - 2025-26 › Travel. Each file carries earlier months forward, so every month is taken from the latest file that contains it.", "Months are billing months (the sheet a line sits on), not travel dates. A booking made late in one month can be for travel in the next.", "Refunds, cancellations and reversals are negative lines and are netted off. Bookings re-billed under the other account and reversed net to zero.", "“Johars” and “Oxbow / Oxbow Brands” are the two account blocks on the bills.", "Traveller names are standardised across spellings. “+1” / “+2” on a line means extra travellers on the same booking; the cost stays with the named person.", "Every line reconciles: base fare + airline/rail charges (S.C) + agent fee (Taxable Value) + GST equals the line total."]};
+const MONTHS = META.months;
+const MODES = ["Air","Hotel","Rail","Bus"];
+const MODE_VAR = {Air:"--air",Hotel:"--hotel",Rail:"--rail",Bus:"--bus"};
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const col = m => `var(${MODE_VAR[m]})`;
+const state = {acct:"All", person:"All", q:""};
+
+const inr = new Intl.NumberFormat("en-IN",{maximumFractionDigits:0});
+const rs = v => (v<0?"−₹":"₹")+inr.format(Math.abs(Math.round(v)));
+function short(v){
+  const a=Math.abs(v), s=v<0?"−₹":"₹";
+  if(a>=1e5) return s+(a/1e5).toFixed(a>=1e6?1:2)+"L";
+  if(a>=1e3) return s+(a/1e3).toFixed(a>=1e4?0:1)+"K";
+  return s+Math.round(a);
+}
+const pct = (a,b) => b ? (a/b*100).toFixed(1)+"%" : "–";
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtD = d => { if(!d) return "–"; const [y,m,dd]=d.split("-"); return `${dd}-${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]}-${y.slice(2)}`; };
+const sum = (arr,f) => arr.reduce((a,r)=>a+f(r),0);
+
+function rowsAcct(){ return DATA.filter(r => state.acct==="All" || r.acct===state.acct); }
+function rows(){ return rowsAcct().filter(r => state.person==="All" || r.name===state.person); }
+
+/* ---------- tooltip ---------- */
+const tip = document.getElementById("tip");
+function showTip(html, e){
+  tip.innerHTML = html; tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if(x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if(y + h > innerHeight - 8) y = e.clientY - h - 14;
+  tip.style.left = Math.max(8,x)+"px"; tip.style.top = Math.max(8,y)+"px";
+}
+const hideTip = () => tip.hidden = true;
+function modeTip(title, byMode, total){
+  let h = `<div class="t">${esc(title)}</div>`;
+  MODES.forEach(m => { if(byMode[m]) h += `<div class="r"><span><i class="sw" style="background:${col(m)}"></i>${m}</span><span class="num">${rs(byMode[m])}</span></div>`; });
+  return h + `<div class="r total"><span>Net total</span><span class="num">${rs(total)}</span></div>`;
+}
+
+/* ---------- filters ---------- */
+function buildPersonSelect(){
+  const sel = document.getElementById("person");
+  const tot = {};
+  rowsAcct().forEach(r => tot[r.name]=(tot[r.name]||0)+r.total);
+  const names = Object.keys(tot).sort((a,b)=>tot[b]-tot[a]);
+  if(state.person!=="All" && !names.includes(state.person)) state.person="All";
+  sel.innerHTML = `<option value="All">All team members (${names.length})</option>` + names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+  sel.value = state.person;
+}
+document.getElementById("acct").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  state.acct = b.dataset.v; render();
+});
+document.getElementById("person").addEventListener("change", e => { state.person = e.target.value; render(); });
+document.getElementById("reset").addEventListener("click", () => { state.acct="All"; state.person="All"; render(); });
+document.getElementById("q").addEventListener("input", e => { state.q = e.target.value.trim().toLowerCase(); renderDetail(); });
+function pickPerson(n){ state.person = state.person===n ? "All" : n; render(); document.getElementById("person").focus({preventScroll:true}); }
+
+/* ---------- KPIs ---------- */
+function renderKPIs(R){
+  const net = sum(R,r=>r.total);
+  const byM = MONTHS.map(m => sum(R.filter(r=>r.month===m), r=>r.total));
+  const active = byM.filter(v=>v!==0).length || 1;
+  let pk = 0; byM.forEach((v,i)=>{ if(v>byM[pk]) pk=i; });
+  const bookings = R.filter(r=>!r.refund && r.total>0);
+  const refunds = sum(R.filter(r=>r.total<0), r=>r.total);
+  const fees = sum(R, r=>r.fee+r.gst);
+  const gross = sum(bookings, r=>r.total);
+  const people = new Set(R.map(r=>r.name)).size;
+  const tiles = [
+    ["Net travel spend", short(net), `${rs(net)} across ${active} month${active>1?"s":""}`],
+    ["Average per month", short(net/active), `Months with any billing`],
+    ["Peak month", MONTHS[pk], `${rs(byM[pk])} billed`],
+    ["Bookings", inr.format(bookings.length), state.person==="All" ? `${people} team member${people>1?"s":""} travelled` : `Tickets and hotel stays`],
+    ["Refunds and reversals", short(refunds), `${pct(-refunds,gross)} of gross bookings`],
+    ["Agent fees + GST", short(fees), `${pct(fees,net)} of net spend`],
+  ];
+  document.getElementById("kpis").innerHTML = tiles.map(t=>`<div class="kpi"><span class="eyebrow">${t[0]}</span><span class="v">${t[1]}</span><span class="d">${t[2]}</span></div>`).join("");
+}
+
+/* ---------- monthly stacked chart ---------- */
+function niceMax(v){ if(v<=0) return 0; const p=Math.pow(10,Math.floor(Math.log10(v))); const n=v/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
+function renderMonthChart(R){
+  const box = document.getElementById("monthChart");
+  const W = Math.max(320, box.clientWidth), H = W<560 ? 260 : 300;
+  const m = {t:22,r:8,b:28,l:W<560?44:54};
+  const data = MONTHS.map(mo => {
+    const rr = R.filter(r=>r.month===mo); const by={};
+    MODES.forEach(md => by[md] = sum(rr.filter(r=>r.mode===md), r=>r.total));
+    return {mo, by, total: sum(rr,r=>r.total)};
+  });
+  const posMax = Math.max(0,...data.map(d=>MODES.reduce((a,md)=>a+Math.max(0,d.by[md]),0)));
+  const negMin = Math.min(0,...data.map(d=>MODES.reduce((a,md)=>a+Math.min(0,d.by[md]),0)));
+  let top = niceMax(posMax*1.08) || 1;
+  const step = top/4; const bot = negMin<0 ? -Math.ceil(-negMin/step)*step : 0;
+  const y = v => m.t + (top - v)/(top-bot)*(H-m.t-m.b);
+  const iw = W-m.l-m.r, bw = iw/MONTHS.length, barW = Math.min(46, bw*0.62);
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly travel cost stacked by mode">`;
+  for(let v=bot; v<=top+1e-6; v+=step){
+    s += `<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${v===0?css('--axis'):css('--grid')}" stroke-width="1"/>`;
+    s += `<text x="${m.l-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="${css('--muted')}" class="num">${short(v).replace("₹","")}</text>`;
+  }
+  data.forEach((d,i) => {
+    const cx = m.l + bw*i + bw/2, x0 = cx - barW/2;
+    let up = 0, dn = 0;
+    const segs = [];
+    MODES.forEach(md => {
+      const v = d.by[md]; if(!v) return;
+      if(v>0){ segs.push({md,a:up,b:up+v}); up+=v; } else { segs.push({md,a:dn+v,b:dn}); dn+=v; }
+    });
+    const topSeg = segs.filter(g=>g.b>0).pop(), botSeg = segs.filter(g=>g.a<0).pop();
+    segs.forEach(g => {
+      // 2px surface gap: above every positive segment except the top one, below every negative except the bottom one
+      const y1 = y(g.b), y2 = y(g.a), pos = g.b>0;
+      const gapTop = pos && g!==topSeg ? 2 : 0, gapBot = !pos && g!==botSeg ? 2 : 0;
+      const yy = y1 + gapTop, h = Math.max(0, y2 - y1 - gapTop - gapBot);
+      const r = (g===topSeg||g===botSeg) ? 4 : 0;
+      if(h<=0) return;
+      if(r && h>r*2){
+        const isTop = g===topSeg;
+        const p = isTop
+          ? `M${x0},${yy+h} V${yy+r} Q${x0},${yy} ${x0+r},${yy} H${x0+barW-r} Q${x0+barW},${yy} ${x0+barW},${yy+r} V${yy+h} Z`
+          : `M${x0},${yy} V${yy+h-r} Q${x0},${yy+h} ${x0+r},${yy+h} H${x0+barW-r} Q${x0+barW},${yy+h} ${x0+barW},${yy+h-r} V${yy} Z`;
+        s += `<path d="${p}" fill="${css(MODE_VAR[g.md])}"/>`;
+      } else s += `<rect x="${x0}" y="${yy}" width="${barW}" height="${h}" fill="${css(MODE_VAR[g.md])}"/>`;
+    });
+    if(d.total) s += `<text x="${cx}" y="${y(up)-6}" text-anchor="middle" font-size="11" font-weight="600" fill="${css('--ink-2')}" class="num">${short(d.total)}</text>`;
+    s += `<text x="${cx}" y="${H-8}" text-anchor="middle" font-size="11" fill="${css('--muted')}">${W<520?d.mo.slice(0,3):d.mo}</text>`;
+    s += `<rect class="hit" data-i="${i}" x="${m.l+bw*i}" y="${m.t}" width="${bw}" height="${H-m.t-m.b}" fill="transparent"/>`;
+  });
+  s += `</svg>`;
+  box.innerHTML = s;
+  box.querySelectorAll(".hit").forEach(el => {
+    const d = data[+el.dataset.i];
+    el.addEventListener("mousemove", e => { el.setAttribute("fill", css('--line')); showTip(modeTip(d.mo, d.by, d.total), e); });
+    el.addEventListener("mouseleave", () => { el.setAttribute("fill","transparent"); hideTip(); });
+  });
+}
+
+/* ---------- people ---------- */
+function renderPeople(){
+  const R = rowsAcct();
+  const net = sum(R,r=>r.total);
+  const by = {};
+  R.forEach(r => { const p = by[r.name] ||= {name:r.name,total:0,modes:{},n:0}; p.total+=r.total; p.modes[r.mode]=(p.modes[r.mode]||0)+r.total; if(r.total>0) p.n++; });
+  const list = Object.values(by).sort((a,b)=>b.total-a.total);
+  const max = Math.max(...list.map(p=>p.total),1);
+  const el = document.getElementById("people");
+  el.innerHTML = list.map((p,i) => {
+    const bars = MODES.filter(md => (p.modes[md]||0)>0).map(md => `<i style="width:${p.modes[md]/max*100}%;background:${col(md)}"></i>`).join("");
+    return `<button class="prow clickable${state.person===p.name?" sel":""}" data-i="${i}" aria-pressed="${state.person===p.name}">
+      <span class="nm">${esc(p.name)}</span><span class="bar">${bars}</span>
+      <span class="amt num">${short(p.total)}<small>${pct(p.total,net)}</small></span></button>`;
+  }).join("");
+  el.querySelectorAll(".prow").forEach(b => {
+    const p = list[+b.dataset.i];
+    b.addEventListener("click", () => pickPerson(p.name));
+    b.addEventListener("mousemove", e => showTip(modeTip(`${p.name} · ${p.n} bookings`, p.modes, p.total), e));
+    b.addEventListener("mouseleave", hideTip);
+  });
+}
+
+/* ---------- splits ---------- */
+function splitRows(items, total){
+  const max = Math.max(...items.map(i=>i.v),1);
+  return items.map(i => `<div class="srow"><span>${i.k}</span><span class="track"><i style="width:${Math.max(0,i.v)/max*100}%;background:${i.c}"></i></span><span class="amt num">${short(i.v)} <small>${pct(i.v,total)}</small></span></div>`).join("");
+}
+function renderSplits(R){
+  const net = sum(R,r=>r.total);
+  document.getElementById("modes").innerHTML = `<div class="eyebrow">By travel mode</div>` +
+    splitRows(MODES.map(md=>({k:md, v:sum(R.filter(r=>r.mode===md),r=>r.total), c:col(md)})).sort((a,b)=>b.v-a.v), net);
+  document.getElementById("accts").innerHTML = `<div class="eyebrow">By billing account</div>` +
+    splitRows(["Oxbow","Johars"].map(a=>({k:a, v:sum(R.filter(r=>r.acct===a),r=>r.total), c:"var(--accent)"})), net);
+  const G = R.filter(r=>r.total>0);
+  const parts = [["Base fare / room",sum(G,r=>r.base),"var(--accent)"],["Airline & rail charges",sum(G,r=>r.sc),"var(--air)"],["Agent fee",sum(G,r=>r.fee),"var(--hotel)"],["GST on fee",sum(G,r=>r.gst),"var(--bus)"]];
+  const gt = sum(parts.map(p=>({v:p[1]})),p=>p.v) || 1;
+  document.getElementById("build").innerHTML = parts.filter(p=>p[1]>0).map(p=>`<i style="width:${p[1]/gt*100}%;background:${p[2]}" title="${p[0]}: ${rs(p[1])}"></i>`).join("");
+  document.getElementById("buildLegend").innerHTML = parts.map(p=>`<span><i class="sw" style="background:${p[2]}"></i>${p[0]} <b class="num">${short(p[1])}</b></span>`).join("");
+}
+
+/* ---------- matrix ---------- */
+function renderMatrix(){
+  const R = rowsAcct();
+  const names = [...new Set(R.map(r=>r.name))];
+  const cell = {}, rowT = {}, colT = {};
+  R.forEach(r => { const k=r.name+"|"+r.month; cell[k]=(cell[k]||0)+r.total; rowT[r.name]=(rowT[r.name]||0)+r.total; colT[r.month]=(colT[r.month]||0)+r.total; });
+  names.sort((a,b)=>rowT[b]-rowT[a]);
+  const mx = Math.max(...Object.values(cell),1);
+  const heat = css('--heat');
+  let h = `<thead><tr><th>Team member</th>${MONTHS.map(m=>`<th>${m}</th>`).join("")}<th class="tot">Total</th></tr></thead><tbody>`;
+  names.forEach(n => {
+    const dim = state.person!=="All" && state.person!==n;
+    h += `<tr data-n="${esc(n)}" tabindex="0" style="${dim?"opacity:.4":""}"><td>${esc(n)}</td>` + MONTHS.map(m => {
+      const v = cell[n+"|"+m]; if(!v) return `<td class="cell zero">–</td>`;
+      const a = v>0 ? (0.08 + 0.72*(v/mx)) : 0; const dark = a>0.5;
+      return `<td class="cell${v<0?" neg":""}" style="background:rgba(${heat},${a.toFixed(3)});${dark?"color:#fff":""}">${short(v)}</td>`;
+    }).join("") + `<td class="tot">${short(rowT[n])}</td></tr>`;
+  });
+  const gt = sum(Object.values(rowT),v=>v);
+  h += `</tbody><tfoot><tr><td>All team members</td>${MONTHS.map(m=>`<td>${colT[m]?short(colT[m]):"–"}</td>`).join("")}<td class="tot">${short(gt)}</td></tr></tfoot>`;
+  const t = document.getElementById("matrix"); t.innerHTML = h;
+  t.querySelectorAll("tbody tr").forEach(tr => {
+    tr.addEventListener("click", () => pickPerson(tr.dataset.n));
+    tr.addEventListener("keydown", e => { if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pickPerson(tr.dataset.n);} });
+  });
+}
+
+/* ---------- routes ---------- */
+function renderRoutes(R){
+  const by = {};
+  R.filter(r=>r.mode!=="Hotel").forEach(r => {
+    const k = [r.frm.toUpperCase(), r.to.toUpperCase()].sort().join(" ⇄ ");
+    const o = by[k] ||= {k, v:0, n:0}; o.v += r.total; if(r.total>0) o.n++;
+  });
+  const list = Object.values(by).filter(o=>o.v>0).sort((a,b)=>b.v-a.v).slice(0,12);
+  document.getElementById("routes").innerHTML = list.length ? list.map(o=>`<div class="route"><b>${esc(o.k)}</b><span class="num">${short(o.v)} <span class="count">· ${o.n} ticket${o.n>1?"s":""}</span></span></div>`).join("") : `<span class="count">No tickets for this selection.</span>`;
+}
+
+/* ---------- detail ---------- */
+function renderDetail(){
+  let R = rows();
+  if(state.q) R = R.filter(r => [r.name,r.raw,r.frm,r.to,r.ref,r.mode,r.acct,r.month].join(" ").toLowerCase().includes(state.q));
+  R = R.slice().sort((a,b)=> MONTHS.indexOf(a.month)-MONTHS.indexOf(b.month) || (a.booked||"").localeCompare(b.booked||""));
+  let h = `<thead><tr><th>Month</th><th class="left">Traveller</th><th class="left">Mode</th><th class="left">From → To</th><th class="left">PNR / Hotel</th><th>Booked</th><th>Travel / Check-in</th><th>Base</th><th>Charges</th><th>Agent fee</th><th>GST</th><th class="tot">Total</th><th class="left">Account</th></tr></thead><tbody>`;
+  h += R.map(r => `<tr><td>${r.month}</td><td class="left">${esc(r.name)}${r.pax>1?` <span class="pill">+${r.pax-1}</span>`:""}</td>
+    <td class="left">${r.mode}${r.refund?` <span class="pill ref">${r.total<0?"Refund":"Adj."}</span>`:""}</td>
+    <td class="left mono">${esc(r.frm)}${r.frm!==r.to?" → "+esc(r.to):""}</td><td class="left mono" style="max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${esc(r.ref)}">${esc(r.ref)}</td>
+    <td>${fmtD(r.booked)}</td><td>${fmtD(r.travel)}</td><td>${inr.format(r.base)}</td><td>${inr.format(r.sc)}</td><td>${inr.format(r.fee)}</td><td>${inr.format(r.gst)}</td>
+    <td class="tot${r.total<0?" neg":""}">${rs(r.total)}</td><td class="left">${r.acct}</td></tr>`).join("");
+  const t = sum(R,r=>r.total);
+  h += `</tbody><tfoot><tr><td colspan="11">Total of ${R.length} lines</td><td class="tot">${rs(t)}</td><td></td></tr></tfoot>`;
+  document.getElementById("detail").innerHTML = h;
+  document.getElementById("count").textContent = `${R.length} lines · ${rs(t)}`;
+}
+
+/* ---------- legends, notes ---------- */
+document.getElementById("legend-month").innerHTML = MODES.map(md=>`<span><i class="sw" style="background:${col(md)}"></i>${md}</span>`).join("");
+document.getElementById("period").textContent = `${META.period} · ${DATA.length} bill lines · updated from WorkDrive ${META.pulled}`;
+document.getElementById("notes").innerHTML = META.notes.map(n=>`<li>${n}</li>`).join("");
+
+function render(){
+  document.querySelectorAll("#acct button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v===state.acct));
+  buildPersonSelect();
+  document.getElementById("reset").hidden = state.acct==="All" && state.person==="All";
+  const R = rows();
+  renderKPIs(R); renderMonthChart(R); renderPeople(); renderSplits(R); renderMatrix(); renderRoutes(R); renderDetail();
+}
+render();
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => renderMonthChart(rows()), 120); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", render);
+new MutationObserver(render).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+</script>
